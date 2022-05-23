@@ -7,7 +7,6 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
-	"log"
 	"os"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -67,6 +66,11 @@ func CreateKey(password string) ([]byte, error) {
 	return cipherText, nil
 }
 
+func CheckPassword(password string) error {
+	_, err := ListAllFiles(password)
+	return err
+}
+
 func encrypt(data []byte, password string) ([]byte, error) {
 	key, err := getKey(password)
 	if err != nil {
@@ -121,51 +125,43 @@ func decrypt(cipherText []byte, password string) ([]byte, error) {
 }
 
 // EncryptPath takes a srcPath and creates a encrypted version at destPath
-func CryptPath(srcPath, destPath, password string, decrypt bool) error {
+// TODO: check this
+func CryptPath(srcPath, destPath, password string, decrypt bool) (int64, error) {
 	infile, err := os.Open(srcPath)
+	stat, _ := infile.Stat()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	defer infile.Close()
 
 	key, err := getKey(password)
 	if err != nil {
-		return err
-	}
-
-	_, err = rand.Read(key)
-	if err != nil {
-		return err
+		return 0, err
 	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var iv []byte = make([]byte, block.BlockSize())
 
 	if !decrypt {
 		if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-			return err
+			return 0, err
 		}
 	} else {
-		fi, err := infile.Stat()
-		if err != nil {
-			return err
-		}
-
-		msgLen := fi.Size() - int64(len(iv))
+		msgLen := stat.Size() - int64(len(iv))
 		_, err = infile.ReadAt(iv, msgLen)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
 	outfile, err := os.OpenFile(destPath, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
-		log.Fatal(err)
+		return 0, err
 	}
 	defer outfile.Close()
 
@@ -183,14 +179,14 @@ func CryptPath(srcPath, destPath, password string, decrypt bool) error {
 			break
 		}
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
 	_, err = outfile.Write(iv)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return outfile.Chmod(READ_ONLY_FILE_MODE)
+	return stat.Size(), outfile.Chmod(READ_ONLY_FILE_MODE)
 }

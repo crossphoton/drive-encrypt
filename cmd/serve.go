@@ -5,8 +5,10 @@ Copyright © 2022 Aditya Agrawal adiag1200@gmail.com
 package cmd
 
 import (
-	"fmt"
+	"log"
+	"net/http"
 
+	srcHttp "github.com/crossphoton/drive-encrypt/src/http"
 	"github.com/spf13/cobra"
 )
 
@@ -16,20 +18,12 @@ var serveCmd = &cobra.Command{
 	Short: "Start the HTTP file server",
 	Long:  `Start the HTTP file server`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("serve called")
+		mux := srcHttp.GetRouter()
+		log.Printf("starting http server at %v", SERVER_ADDRESS)
+		http.ListenAndServe(SERVER_ADDRESS, mux)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// serveCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// serveCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

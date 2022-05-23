@@ -8,7 +8,7 @@ import (
 func getWorkDirPath() (string, error) {
 	binaryPath, err := os.Getwd()
 
-	path := filepath.Join(binaryPath, "/encryption")
+	path := filepath.Join(binaryPath, WORKING_PATH)
 	if err != nil {
 		return "", err
 	}
