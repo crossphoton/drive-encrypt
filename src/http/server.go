@@ -1,10 +1,12 @@
 package http
 
 import (
-	"log"
+	// "log"
 	"net/http"
 )
 
-func getRouter() {
-	// http.
+func getRouter() (mux *http.ServeMux) {
+	mux = http.NewServeMux()
+	mux.HandleFunc("/login", Login)
+	return
 }
