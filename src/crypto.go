@@ -125,9 +125,12 @@ func decrypt(cipherText []byte, password string) ([]byte, error) {
 }
 
 // EncryptPath takes a srcPath and creates a encrypted version at destPath
-// TODO: check this
 func CryptPath(srcPath, destPath, password string, decrypt bool) (int64, error) {
+	// Open file to read
 	infile, err := os.Open(srcPath)
+	if err != nil {
+		return 0, err
+	}
 	stat, _ := infile.Stat()
 	if err != nil {
 		return 0, err
@@ -135,11 +138,13 @@ func CryptPath(srcPath, destPath, password string, decrypt bool) (int64, error) 
 
 	defer infile.Close()
 
+	// Get the key
 	key, err := getKey(password)
 	if err != nil {
 		return 0, err
 	}
 
+	// Create AES block
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return 0, err
@@ -147,6 +152,7 @@ func CryptPath(srcPath, destPath, password string, decrypt bool) (int64, error) 
 
 	var iv []byte = make([]byte, block.BlockSize())
 
+	// Prepare IV
 	if !decrypt {
 		if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 			return 0, err
@@ -159,17 +165,26 @@ func CryptPath(srcPath, destPath, password string, decrypt bool) (int64, error) 
 		}
 	}
 
+	// Open output file
 	outfile, err := os.OpenFile(destPath, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		return 0, err
 	}
 	defer outfile.Close()
 
-	buff := make([]byte, FILE_BUFF_SIZE)
 	stream := cipher.NewCTR(block, iv)
+	totalRead := int64(len(iv))
+	buff := make([]byte, FILE_BUFF_SIZE)
 
+	// Start pumping
 	for {
+		buff_size := (stat.Size() - totalRead)
+		if int(buff_size) < FILE_BUFF_SIZE {
+			buff = make([]byte, buff_size)
+		}
+
 		n, err := infile.Read(buff)
+		totalRead += int64(n)
 		if n > 0 {
 			stream.XORKeyStream(buff, buff[:n])
 			outfile.Write(buff[:n])
@@ -181,12 +196,23 @@ func CryptPath(srcPath, destPath, password string, decrypt bool) (int64, error) 
 		if err != nil {
 			return 0, err
 		}
+
+		if err == nil && n == 0 {
+			break
+		}
 	}
 
-	_, err = outfile.Write(iv)
-	if err != nil {
-		return 0, err
+	if !decrypt {
+		// Append IV
+		_, err = outfile.Write(iv)
+		if err != nil {
+			return 0, err
+		}
 	}
 
-	return stat.Size(), outfile.Chmod(READ_ONLY_FILE_MODE)
+	if !decrypt {
+		// Change file mode
+		err = outfile.Chmod(READ_ONLY_FILE_MODE)
+	}
+	return stat.Size(), err
 }

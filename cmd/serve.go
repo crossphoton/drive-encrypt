@@ -18,6 +18,9 @@ var serveCmd = &cobra.Command{
 	Short: "Start the HTTP file server",
 	Long:  `Start the HTTP file server`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if !HTTP_SERVER_READY {
+			log.Fatal("server not ready yet")
+		}
 		mux := srcHttp.GetRouter()
 		log.Printf("starting http server at %v", SERVER_ADDRESS)
 		http.ListenAndServe(SERVER_ADDRESS, mux)

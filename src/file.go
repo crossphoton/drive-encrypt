@@ -11,7 +11,7 @@ import (
 )
 
 type File struct {
-	fileID string `json:"-"`
+	FileID string `json:"file_id"`
 	Name   string `json:"name"`
 	Path   string `json:"path"`
 	Size   int64  `json:"size"`
@@ -96,7 +96,7 @@ func deleteFileFromMeta(path, password string, recursive bool) ([]File, error) {
 
 func NewFile(data []byte, file File, password string) error {
 	fileId := uuid.New().String()
-	file.fileID = fileId
+	file.FileID = fileId
 	data, err := encrypt(data, password)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func NewFile(data []byte, file File, password string) error {
 		return err
 	}
 
-	return writeFile(filepath.Join(ENCRYPTED_FILES_DIR, file.fileID), data)
+	return writeFile(filepath.Join(ENCRYPTED_FILES_DIR, file.FileID), data)
 }
 
 func NewFileWithPath(srcPath, destPath, password string) error {
@@ -134,6 +134,7 @@ func NewFileWithPath(srcPath, destPath, password string) error {
 	}
 
 	var file File
+	file.FileID = fileId
 	file.Size = size
 	file.Path = filepath.Dir(destPath)
 	file.Name = filepath.Base(destPath) // TODO: Check whether destPath is dir or filename
@@ -174,10 +175,39 @@ func DeleteFile(path, password string, recursive bool) error {
 	}
 
 	for _, file := range files {
-		err = os.Remove(filepath.Join(wd, WORKING_PATH, ENCRYPTED_FILES_DIR, file.fileID))
+		err = os.Remove(filepath.Join(wd, WORKING_PATH, ENCRYPTED_FILES_DIR, file.FileID))
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// DecryptFile takes file path (as in meta) and creates a new file in the current dir
+func DecryptFile(srcPath, destPath, password string) error {
+	files, err := ListPath(srcPath, password)
+	if err != nil {
+		return err
+	}
+
+	if len(files) != 1 {
+		return fmt.Errorf("no of files with given path: %d", len(files))
+	}
+
+	file := files[0]
+
+	wd, err := getWorkDirPath()
+	if err != nil {
+		return err
+	}
+
+	if destPath == "" {
+		destPath = filepath.Join("./", file.Name)
+	}
+	_, err = CryptPath(filepath.Join(wd, ENCRYPTED_FILES_DIR, file.FileID), destPath, password, true)
+	if err != nil {
+		return err
 	}
 
 	return nil

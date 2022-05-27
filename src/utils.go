@@ -1,6 +1,7 @@
 package src
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -39,4 +40,21 @@ func readFile(path string) ([]byte, error) {
 	}
 
 	return os.ReadFile(filepath.Join(workingPath, path))
+}
+
+func init() {
+	workingPath, err := getWorkDirPath()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.MkdirAll(workingPath, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.MkdirAll(filepath.Join(workingPath, ENCRYPTED_FILES_DIR), os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

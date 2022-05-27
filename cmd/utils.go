@@ -13,9 +13,9 @@ func getPassword(cmd *cobra.Command) (password string) {
 }
 
 func printFiles(files []src.File) {
-	fmt.Printf("%v\t%v\t\t%v\t%v\n", "Index", "Name", "Path", "Size")
-	fmt.Printf("-------------------------------------------------\n")
+	fmt.Printf("%v\t%v\t\t\t\t%v\t%v\n", "Index", "Name", "Path", "Size")
+	fmt.Println("-------------------------------------------------------------------------------------------")
 	for ind, file := range files {
-		fmt.Printf("%v\t%v\t\t%v\t%v\n", ind+1, file.Name, file.Path, file.Size)
+		fmt.Printf("%v\t%v\t\t\t\t%v\t%v\n", ind+1, file.Name, file.Path, file.Size)
 	}
 }

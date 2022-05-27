@@ -22,8 +22,9 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
+	"log"
 
+	"github.com/crossphoton/drive-encrypt/src"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +33,18 @@ var pullCmd = &cobra.Command{
 	Use:   "pull",
 	Short: "Decrypt a file",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("pull called")
+		if len(args) < 1 {
+			log.Fatal("Atleast 1 argument expected.\nUse pull <enc file path> <(optional) output path>")
+		}
+		destPath := ""
+		if len(args) >= 2 {
+			destPath = args[1]
+		}
+
+		err := src.DecryptFile(args[0], destPath, getPassword(cmd))
+		if err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
