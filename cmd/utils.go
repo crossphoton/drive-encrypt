@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/crossphoton/drive-encrypt/src"
 	"github.com/spf13/cobra"
@@ -9,6 +10,9 @@ import (
 
 func getPassword(cmd *cobra.Command) (password string) {
 	password, _ = cmd.Flags().GetString("password")
+	if password == "" {
+		log.Fatal("No password specified")
+	}
 	return
 }
 
